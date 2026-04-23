@@ -1,69 +1,25 @@
-Hi GRANDMA 👵,
+from langchain.schema import BaseRetriever
+from typing import List
+from langchain.docstore.document import Document
 
-I built a small project called AI Study Assistant.
+class SimpleRetriever(BaseRetriever):
+    def __init__(self, texts):
+        self.texts = texts
+        self.contents = [t.page_content for t in texts]
 
-In simple words, it’s like a smart helper for studying.
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        import numpy as np
 
-You can upload your study notes (like PDF files), and then ask questions about them — just like you would ask a teacher. The system reads your notes and gives answers based only on what is inside your file.
+        self.vectorizer = TfidfVectorizer()
+        self.vectors = self.vectorizer.fit_transform(self.contents)
+        self.np = np
 
-💻 What I actually did
-I made a system that can read a document
-Then it breaks it into small parts
-It stores and remembers those parts
-And when you ask a question, it finds the most relevant part and answers
+    def _get_relevant_documents(self, query: str) -> List[Document]:
+        query_vec = self.vectorizer.transform([query])
+        scores = (self.vectors @ query_vec.T).toarray().flatten()
 
-So instead of reading the whole PDF, you can just ask:
-👉 “Explain this topic”
-👉 “What is written in chapter 2?”
+        top_k_idx = self.np.argsort(scores)[-3:][::-1]
+        return [self.texts[i] for i in top_k_idx]
 
-And it will reply instantly.
-
-🤖 What AI part I used
-
-I used something called Generative AI, which means:
-
-The computer can understand text
-And generate answers like a human
-
-But I made it smarter by not letting it guess randomly.
-
-First, it searches inside your notes, then gives the answer from there. This method is called RAG (Retrieval-based answering).
-
-So the answers stay relevant and useful.
-
-🧰 Tools (Tech Stack) I used
-
-I didn’t build everything from scratch — I used some tools:
-
-Python → main programming language
-Streamlit → to create the simple website interface
-LangChain → to connect everything together
-FAISS → to store and quickly search the notes
-HuggingFace models → for understanding and generating answers
-PDF reader tools → to read uploaded files
-
-These tools helped me turn my idea into a working project.
-
-🧠 Extra things I added
-The system can remember previous questions, so conversation feels natural
-It has basic safety checks to avoid wrong or harmful questions
-It works without paid APIs, so it’s cost-free to run
-💡 Why I made this
-
-Sometimes studying is slow and confusing.
-So I wanted to create something that:
-
-Saves time
-Makes learning easier
-Feels like chatting with a tutor
-🧠 What I learned
-
-While building this, I understood:
-
-How AI can read and understand text
-How to connect different parts into one system
-How real-world AI apps actually work
-
-That’s it GRANDMA 😊
-
-In short — I made a study helper that reads your notes and answers your questions like a smart friend.
+    async def _aget_relevant_documents(self, query: str):
+        return self._get_relevant_documents(query)
