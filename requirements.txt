@@ -5,4 +5,4 @@ faiss-cpu
 pypdf
 huggingface_hub==0.20.3
 python-dotenv
-sentence-transformers==2.7.0
+
